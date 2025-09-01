@@ -43,12 +43,22 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.1.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-storage")
 
-
+    // Firebase UI
     implementation("com.firebaseui:firebase-ui-firestore:9.0.0")
+    
+    // Image loading
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+    
+    // RecyclerView
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
+    
+    // Fragment
+    implementation("androidx.fragment:fragment:1.8.5")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-
 }

@@ -8,33 +8,14 @@
     tools:context=".ChatActivity"
     android:background="@color/off_white">
 
+    <!-- Fixed Toolbar that won't move when keyboard appears -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="?attr/actionBarSize"
         android:background="@color/my_primary"
-        android:padding="10dp"
+        android:padding="8dp"
+        android:elevation="4dp"
         android:id="@+id/toolbar">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Username"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="@color/white"
-            android:layout_marginStart="10dp"
-            android:layout_centerVertical="true"
-            android:layout_toRightOf="@id/profile_pic_layout"
-            android:id="@+id/other_username"
-            />
-
-        <include layout="@layout/profile_pic_view"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginStart="10dp"
-            android:layout_toRightOf="@id/back_btn"
-            android:id="@+id/profile_pic_layout"
-            />
 
         <ImageButton
             android:layout_width="32dp"
@@ -43,37 +24,71 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             app:tint="@color/white"
             android:layout_centerVertical="true"
+            android:layout_marginStart="8dp"
             android:id="@+id/back_btn"/>
+
+        <include layout="@layout/profile_pic_view"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:layout_toRightOf="@id/back_btn"
+            android:layout_centerVertical="true"
+            android:id="@+id/profile_pic_layout"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Username"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@color/white"
+            android:layout_marginStart="12dp"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@id/profile_pic_layout"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:id="@+id/other_username"/>
 
     </RelativeLayout>
 
+    <!-- Messages area that will resize when keyboard appears -->
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/toolbar"
         android:layout_above="@id/bottom_layout"
+        android:paddingTop="8dp"
+        android:clipToPadding="false"
         android:id="@+id/chat_recycler_view"/>
 
+    <!-- Fixed input area at bottom -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:minHeight="60dp"
         android:padding="8dp"
+        android:background="@color/white"
+        android:elevation="8dp"
         android:id="@+id/bottom_layout">
 
         <EditText
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:layout_marginStart="10dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="10dp"
-            android:layout_marginBottom="10dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
             android:layout_toLeftOf="@id/message_send_btn"
             android:background="@drawable/edit_text_rounded_corner"
-            android:elevation="4dp"
             android:hint="Write message here"
-            android:padding="10dp"
+            android:padding="12dp"
+            android:minHeight="44dp"
+            android:maxLines="4"
+            android:scrollbars="vertical"
+            android:inputType="textCapSentences|textMultiLine"
+            android:imeOptions="actionSend"
             android:id="@+id/chat_message_input"/>
 
         <ImageButton
@@ -81,12 +96,15 @@
             android:layout_height="48dp"
             android:src="@drawable/icon_send"
             android:layout_alignParentEnd="true"
-            android:layout_centerInParent="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            app:tint="@color/my_primary"
+            android:layout_centerVertical="true"
+            android:background="@drawable/circular_bg"
+            android:backgroundTint="@color/my_primary"
+            app:tint="@color/white"
             android:id="@+id/message_send_btn"
-            android:padding="8dp"
-            android:layout_marginStart="10dp"
+            android:padding="12dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="4dp"
+            android:elevation="2dp"
             />
 
     </RelativeLayout>

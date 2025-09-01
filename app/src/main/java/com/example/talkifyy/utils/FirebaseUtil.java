@@ -78,5 +78,10 @@ public class FirebaseUtil {
 //                .child(otherUserId);
 //    }
 
+    public static void updateFCMToken(String token) {
+        if (currentUserId() != null) {
+            currentUserDetails().update("fcmToken", token);
+        }
+    }
 
 }

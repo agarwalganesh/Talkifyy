@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Users can read other users' profiles for search functionality
+    match /users/{userId} {
+      allow read: if request.auth != null;
+    }
+    
+    // Chatroom access rules
+    match /chatrooms/{chatroomId} {
+      allow read, write: if request.auth != null && 
+        request.auth.uid in resource.data.userIds;
+    }
+    
+    // Chat messages rules - users can read/write messages in chatrooms they're part of
+    match /chatrooms/{chatroomId}/chats/{messageId} {
+      // Allow reading messages if user is part of the chatroom
+      allow read: if request.auth != null && 
+        request.auth.uid in get(/databases/$(database)/documents/chatrooms/$(chatroomId)).data.userIds;
+      
+      // Allow writing messages if user is authenticated and is the sender
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.senderId &&
+        request.auth.uid in get(/databases/$(database)/documents/chatrooms/$(chatroomId)).data.userIds;
+    }
+  }
+}
