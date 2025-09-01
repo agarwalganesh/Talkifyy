@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "251900273238",
+    "project_id": "gkg-talkifyy",
+    "storage_bucket": "gkg-talkifyy.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:251900273238:android:c820be9a573d643d7411f7",
+        "android_client_info": {
+          "package_name": "com.example.talkifyy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTdAm34Xj6fHStiNJk3dUERrMnukMmPMY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
