@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.talkifyy"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.talkifyy"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -57,6 +57,9 @@ dependencies {
     
     // Fragment
     implementation("androidx.fragment:fragment:1.8.5")
+    
+    // HTTP client for FCM notifications
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)

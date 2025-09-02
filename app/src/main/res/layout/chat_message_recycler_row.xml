@@ -2,42 +2,119 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp">
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    android:paddingStart="8dp"
+    android:paddingEnd="8dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
-    <LinearLayout
+    <!-- Container for left (received) messages -->
+    <FrameLayout
+        android:id="@+id/left_message_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/edit_text_rounded_corner"
-        android:backgroundTint="@color/chat_color_sender"
-        android:padding="8dp"
+        android:layout_alignParentStart="true"
         android:layout_marginEnd="80dp"
-        android:id="@+id/left_chat_layout"
-        android:orientation="vertical">
-        <TextView
+        android:minHeight="48dp"
+        android:visibility="gone">
+        
+        <!-- Always reserve space for checkbox to prevent jumping -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="start|center_vertical" />
+        
+        <!-- Checkbox for left messages -->
+        <CheckBox
+            android:id="@+id/left_message_checkbox"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="start|center_vertical"
+            android:layout_marginStart="4dp"
+            android:visibility="invisible"
+            android:alpha="0.0"
+            android:scaleX="0.8"
+            android:scaleY="0.8" />
+        
+        <!-- Message bubble for left messages -->
+        <LinearLayout
+            android:id="@+id/left_chat_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            android:textSize="18sp"
+            android:layout_gravity="start|center_vertical"
+            android:layout_marginStart="40dp"
+            android:background="@drawable/edit_text_rounded_corner"
+            android:backgroundTint="@color/chat_color_sender"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:elevation="2dp"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:id="@+id/left_chat_textview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+        
+    </FrameLayout>
 
-            android:id="@+id/left_chat_textview"/>
-    </LinearLayout>
-
-    <LinearLayout
+    <!-- Container for right (sent) messages -->
+    <FrameLayout
+        android:id="@+id/right_message_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/edit_text_rounded_corner"
-        android:backgroundTint="@color/chat_color_receiver"
         android:layout_alignParentEnd="true"
-        android:padding="8dp"
         android:layout_marginStart="80dp"
-        android:id="@+id/right_chat_layout">
-        <TextView
+        android:minHeight="48dp"
+        android:visibility="gone">
+        
+        <!-- Always reserve space for checkbox to prevent jumping -->
+        <View
+            android:layout_width="40dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="end|center_vertical" />
+        
+        <!-- Checkbox for right messages -->
+        <CheckBox
+            android:id="@+id/right_message_checkbox"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="4dp"
+            android:visibility="invisible"
+            android:alpha="0.0"
+            android:scaleX="0.8"
+            android:scaleY="0.8" />
+        
+        <!-- Message bubble for right messages -->
+        <LinearLayout
+            android:id="@+id/right_chat_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            android:id="@+id/right_chat_textview"/>
-    </LinearLayout>
-
+            android:layout_gravity="end|center_vertical"
+            android:layout_marginEnd="40dp"
+            android:background="@drawable/edit_text_rounded_corner"
+            android:backgroundTint="@color/chat_color_receiver"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:elevation="2dp"
+            android:clickable="true"
+            android:focusable="true">
+            
+            <TextView
+                android:id="@+id/right_chat_textview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:lineSpacingExtra="2dp" />
+        </LinearLayout>
+        
+    </FrameLayout>
 
 </RelativeLayout>

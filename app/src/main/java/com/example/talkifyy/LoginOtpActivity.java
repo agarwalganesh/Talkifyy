@@ -37,6 +37,7 @@ public class LoginOtpActivity extends AppCompatActivity {
     Long timeoutSeconds = 60L;
     String verificationCode;
     PhoneAuthProvider.ForceResendingToken  resendingToken;
+    Timer resendTimer;
 
     EditText otpInput;
     Button nextBtn;
@@ -139,11 +140,16 @@ public class LoginOtpActivity extends AppCompatActivity {
     }
 
     void startResendTimer(){
+        // Cancel any existing timer
+        if(resendTimer != null) {
+            resendTimer.cancel();
+        }
+        
         resendOtpTextView.setEnabled(false);
         timeoutSeconds = 60L;
 
-        Timer timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
+        resendTimer = new Timer();
+        resendTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 timeoutSeconds--;
@@ -153,7 +159,7 @@ public class LoginOtpActivity extends AppCompatActivity {
 
                 if(timeoutSeconds <= 0){
                     timeoutSeconds = 60L;
-                    timer.cancel();
+                    resendTimer.cancel();
                     runOnUiThread(() -> {
                         resendOtpTextView.setEnabled(true);
                         resendOtpTextView.setText("Resend OTP");
@@ -161,6 +167,14 @@ public class LoginOtpActivity extends AppCompatActivity {
                 }
             }
         }, 0, 1000);
+    }
+    
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(resendTimer != null) {
+            resendTimer.cancel();
+        }
     }
 
 

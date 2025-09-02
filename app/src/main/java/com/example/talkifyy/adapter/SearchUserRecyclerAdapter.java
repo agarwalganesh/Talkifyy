@@ -38,15 +38,13 @@ public class SearchUserRecyclerAdapter extends FirestoreRecyclerAdapter<UserMode
             holder.usernameText.setText(model.getUsername() + " (Me)");
         }
 
-        // Example for profile pic if needed
-//
-//        FirebaseUtil.getOtherProfilePicStorageRef(model.getUserId()).getDownloadUrl()
-//                .addOnCompleteListener(t -> {
-//                    if(t.isSuccessful()){
-//                        Uri uri  = t.getResult();
-//                        AndroidUtil.setProfilePic(context, uri, holder.profilePic);
-//                    }
-//                });
+        // Load profile picture - prioritize Firestore URLs (always up-to-date)
+        if (model.getProfilePicUrl() != null && !model.getProfilePicUrl().isEmpty()) {
+            AndroidUtil.setProfilePic(context, model.getProfilePicUrl(), holder.profilePic);
+        } else {
+            // Use default profile picture for users without profile pictures
+            holder.profilePic.setImageResource(R.drawable.person_icon);
+        }
 
 
         holder.itemView.setOnClickListener(v -> {

@@ -11,5 +11,16 @@
 
     <color name="chat_color_sender" >#1E88E5</color>
     <color name="chat_color_receiver" >#7CB342</color>
+    
+    <!-- Delete action colors -->
+    <color name="red_500">#F44336</color>
+    <color name="red_700">#D32F2F</color>
+    <color name="gray_light">#E0E0E0</color>
+    <color name="divider_color">#E0E0E0</color>
+    <color name="text_primary">#212121</color>
+    
+    <!-- Context menu colors -->
+    <color name="blue">#2196F3</color>
+    <color name="red">#F44336</color>
 
 </resources>

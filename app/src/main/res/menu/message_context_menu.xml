@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_delete_locally"
+        android:title="Delete for Me"
+        android:icon="@drawable/icon_delete" />
+    <item
+        android:id="@+id/menu_unsend"
+        android:title="Delete for Everyone"
+        android:icon="@drawable/icon_back" />
+    <item
+        android:id="@+id/menu_multi_select"
+        android:title="Select Messages"
+        android:icon="@drawable/icon_back" />
+</menu>

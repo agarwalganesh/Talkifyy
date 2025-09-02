@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.talkifyy.utils.FirebaseUtil;
+import com.example.talkifyy.utils.NotificationUtil;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -68,6 +69,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         bottomNavigationView.setSelectedItemId(R.id.menu_chat);
+        
+        // Initialize notification channel
+        NotificationUtil.createNotificationChannel(this);
         
         // Initialize FCM token
         getFCMToken();
