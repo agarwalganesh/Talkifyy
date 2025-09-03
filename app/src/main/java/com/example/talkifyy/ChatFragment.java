@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 import com.example.talkifyy.adapter.ChatContextMenuListener;
 import com.example.talkifyy.adapter.RecentChatRecyclerAdapter;
 import com.example.talkifyy.model.ChatroomModel;
+import com.example.talkifyy.services.ChatRestorationService;
 import com.example.talkifyy.utils.AndroidUtil;
 import com.example.talkifyy.utils.FirebaseUtil;
 import com.firebase.ui.firestore.FirestoreRecyclerOptions;
@@ -27,11 +28,12 @@ import com.google.firebase.firestore.Query;
 import com.example.talkifyy.model.UserModel;
 
 
-public class ChatFragment extends Fragment implements ChatContextMenuListener {
+public class ChatFragment extends Fragment implements ChatContextMenuListener, ChatRestorationService.ChatRestorationListener {
 
         private static final String TAG = "ChatFragment";
         RecyclerView recyclerView;
         RecentChatRecyclerAdapter adapter;
+        ChatRestorationService restorationService;
 
 
         public ChatFragment() {
@@ -73,6 +75,18 @@ public class ChatFragment extends Fragment implements ChatContextMenuListener {
             super.onStart();
             if(adapter!=null)
                 adapter.startListening();
+            
+            // Initialize and start chat restoration monitoring
+            if (restorationService == null) {
+                restorationService = new ChatRestorationService(getContext(), this);
+            }
+            
+            // Connect restoration service to adapter
+            if (adapter != null) {
+                adapter.setChatRestorationService(restorationService);
+            }
+            
+            restorationService.startMonitoring();
         }
 
         @Override
@@ -80,6 +94,11 @@ public class ChatFragment extends Fragment implements ChatContextMenuListener {
             super.onStop();
             if(adapter!=null)
                 adapter.stopListening();
+            
+            // Stop chat restoration monitoring
+            if (restorationService != null) {
+                restorationService.stopMonitoring();
+            }
         }
 
         @Override
@@ -94,6 +113,12 @@ public class ChatFragment extends Fragment implements ChatContextMenuListener {
             super.onDestroy();
             if(adapter!=null) {
                 adapter.cleanup();
+            }
+            
+            // Cleanup restoration service
+            if (restorationService != null) {
+                restorationService.stopMonitoring();
+                restorationService = null;
             }
         }
         
@@ -125,5 +150,18 @@ public class ChatFragment extends Fragment implements ChatContextMenuListener {
                             Log.e(TAG, "Failed to delete chat: " + chatroomId, e);
                         }
                     });
+        }
+        
+        // ChatRestorationService.ChatRestorationListener implementation
+        @Override
+        public void onChatRestored(String chatroomId, ChatroomModel chatroom) {
+            Log.d(TAG, "Chat restored: " + chatroomId);
+            
+            // Refresh the adapter to show the restored chat
+            if (adapter != null && isAdded()) {
+                getActivity().runOnUiThread(() -> {
+                    adapter.notifyDataSetChanged();
+                });
+            }
         }
 }

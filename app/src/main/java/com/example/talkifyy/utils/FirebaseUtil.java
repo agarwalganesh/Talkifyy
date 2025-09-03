@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.FirebaseApp;
 
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -78,14 +79,67 @@ public class FirebaseUtil {
     public static void logout(){
         FirebaseAuth.getInstance().signOut();
     }
+    
+    // Initialize Firebase Storage with proper configuration
+    private static FirebaseStorage initializeFirebaseStorage() {
+        try {
+            Log.d("FirebaseUtil", "🔧 Initializing Firebase Storage...");
+            
+            // Try to get the default instance first
+            FirebaseStorage storage = FirebaseStorage.getInstance();
+            
+            // Validate the storage bucket
+            String bucket = storage.getReference().getBucket();
+            Log.d("FirebaseUtil", "📦 Using storage bucket: " + bucket);
+            
+            if (bucket != null && !bucket.isEmpty()) {
+                Log.d("FirebaseUtil", "✅ Firebase Storage initialized successfully");
+                return storage;
+            } else {
+                Log.w("FirebaseUtil", "⚠️ Storage bucket is null, trying alternative initialization");
+                return initializeStorageWithCustomBucket();
+            }
+            
+        } catch (Exception e) {
+            Log.e("FirebaseUtil", "❌ Failed to initialize default storage, trying alternative", e);
+            return initializeStorageWithCustomBucket();
+        }
+    }
+    
+    // Alternative storage initialization with explicit bucket URL
+    private static FirebaseStorage initializeStorageWithCustomBucket() {
+        try {
+            Log.d("FirebaseUtil", "🔧 Trying alternative storage initialization...");
+            
+            // Use the bucket URL from your google-services.json
+            String bucketUrl = "gs://gkg-talkifyy.firebasestorage.app";
+            
+            FirebaseStorage storage = FirebaseStorage.getInstance(bucketUrl);
+            Log.d("FirebaseUtil", "✅ Alternative Firebase Storage initialized with: " + bucketUrl);
+            
+            return storage;
+            
+        } catch (Exception e) {
+            Log.e("FirebaseUtil", "❌ Alternative storage initialization failed", e);
+            
+            // Fallback to default instance
+            Log.w("FirebaseUtil", "🔄 Falling back to default Firebase Storage instance");
+            return FirebaseStorage.getInstance();
+        }
+    }
+    
+    // Get a properly initialized Firebase Storage instance
+    public static FirebaseStorage getFirebaseStorage() {
+        return initializeFirebaseStorage();
+    }
 
     public static StorageReference getCurrentProfilePicStorageRef(){
-        return FirebaseStorage.getInstance().getReference().child("profile_pic")
+        return getFirebaseStorage().getReference().child("profile_pic")
                 .child(FirebaseUtil.currentUserId() + ".jpg");
     }
 
     public static StorageReference getOtherProfilePicStorageRef(String otherUserId){
-        return FirebaseStorage.getInstance().getReference().child("profile_pic")
+        return getFirebaseStorage().getReference().child("profile_pic")
                 .child(otherUserId + ".jpg");
     }
 

@@ -10,6 +10,7 @@ import java.util.Set;
 /**
  * Utility class for managing local deletions (messages and chats)
  * that only affect the current user's device without syncing to other users.
+ * Uses SharedPreferences for reliable, immediate storage operations.
  */
 public class LocalDeletionUtil {
     private static final String TAG = "LocalDeletionUtil";

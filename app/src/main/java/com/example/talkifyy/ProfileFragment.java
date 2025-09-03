@@ -5,6 +5,11 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.graphics.Bitmap;
+import android.provider.MediaStore;
+import android.util.Base64;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
@@ -140,12 +145,18 @@ public class ProfileFragment extends Fragment {
             return;
         }
         
-        Log.d(TAG, "Starting upload to Firebase Storage for user: " + FirebaseUtil.currentUserId());
-        Log.d(TAG, "Selected image URI: " + selectedImageUri.toString());
+        Log.d(TAG, "🔥 FIREBASE UPLOAD DEBUG START 🔥");
+        Log.d(TAG, "👤 User ID: " + FirebaseUtil.currentUserId());
+        Log.d(TAG, "🖼️ Image URI: " + selectedImageUri.toString());
+        Log.d(TAG, "🔐 Auth state: " + (FirebaseUtil.isLoggedIn() ? "LOGGED_IN" : "NOT_LOGGED_IN"));
+        
+        // Test Storage connectivity first
+        testStorageConnectivity();
+        
         setInProgress(true);
         
-        // Try multiple upload strategies
-        uploadWithFallbackStrategies();
+        // Try emergency direct upload first
+        emergencyDirectUpload();
     }
     
     void uploadWithFallbackStrategies() {
@@ -156,29 +167,36 @@ public class ProfileFragment extends Fragment {
     void uploadToNewPath() {
         Log.d(TAG, "Attempting upload to new path structure");
         
-        // Create a simple filename
-        String fileName = FirebaseUtil.currentUserId() + ".jpg";
-        StorageReference imageRef = FirebaseStorage.getInstance()
-                .getReference()
-                .child("profile_pictures")
-                .child(fileName);
-        
-        Log.d(TAG, "Uploading to path: " + imageRef.getPath());
-        
-        imageRef.putFile(selectedImageUri)
-                .addOnSuccessListener(taskSnapshot -> {
-                    Log.d(TAG, "✅ Upload successful to new path");
-                    getDownloadUrlAndSave(imageRef);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "❌ Upload failed to new path: " + e.getMessage());
-                    // Try fallback strategy
-                    uploadToLegacyPath();
-                })
-                .addOnProgressListener(taskSnapshot -> {
-                    double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
-                    Log.d(TAG, "Upload progress: " + (int) progress + "%");
-                });
+        try {
+            // Create a simple filename
+            String fileName = FirebaseUtil.currentUserId() + ".jpg";
+            StorageReference imageRef = FirebaseUtil.getFirebaseStorage()
+                    .getReference()
+                    .child("profile_pictures")
+                    .child(fileName);
+            
+            Log.d(TAG, "Uploading to path: " + imageRef.getPath());
+            Log.d(TAG, "Using bucket: " + imageRef.getBucket());
+            
+            imageRef.putFile(selectedImageUri)
+                    .addOnSuccessListener(taskSnapshot -> {
+                        Log.d(TAG, "✅ Upload successful to new path");
+                        getDownloadUrlAndSave(imageRef);
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "❌ Upload failed to new path: " + e.getMessage());
+                        Log.e(TAG, "Error details: " + e.getClass().getSimpleName());
+                        // Try fallback strategy
+                        uploadToLegacyPath();
+                    })
+                    .addOnProgressListener(taskSnapshot -> {
+                        double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                        Log.d(TAG, "Upload progress: " + (int) progress + "%");
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Failed to create storage reference for new path", e);
+            uploadToLegacyPath();
+        }
     }
     
     void uploadToLegacyPath() {
@@ -202,25 +220,32 @@ public class ProfileFragment extends Fragment {
     void uploadToPublicPath() {
         Log.d(TAG, "Attempting upload to public path structure");
         
-        // Try uploading to a more permissive path
-        String fileName = "user_" + FirebaseUtil.currentUserId() + "_" + System.currentTimeMillis() + ".jpg";
-        StorageReference imageRef = FirebaseStorage.getInstance()
-                .getReference()
-                .child("images")
-                .child("profiles")
-                .child(fileName);
-        
-        Log.d(TAG, "Uploading to public path: " + imageRef.getPath());
-        
-        imageRef.putFile(selectedImageUri)
-                .addOnSuccessListener(taskSnapshot -> {
-                    Log.d(TAG, "✅ Upload successful to public path");
-                    getDownloadUrlAndSave(imageRef);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "❌ All upload strategies failed");
-                    handleCompleteUploadFailure(e);
-                });
+        try {
+            // Try uploading to a more permissive path
+            String fileName = "user_" + FirebaseUtil.currentUserId() + "_" + System.currentTimeMillis() + ".jpg";
+            StorageReference imageRef = FirebaseUtil.getFirebaseStorage()
+                    .getReference()
+                    .child("images")
+                    .child("profiles")
+                    .child(fileName);
+            
+            Log.d(TAG, "Uploading to public path: " + imageRef.getPath());
+            Log.d(TAG, "Using bucket: " + imageRef.getBucket());
+            
+            imageRef.putFile(selectedImageUri)
+                    .addOnSuccessListener(taskSnapshot -> {
+                        Log.d(TAG, "✅ Upload successful to public path");
+                        getDownloadUrlAndSave(imageRef);
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "❌ All upload strategies failed");
+                        Log.e(TAG, "Final error details: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+                        handleCompleteUploadFailure(e);
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Failed to create storage reference for public path", e);
+            handleCompleteUploadFailure(e);
+        }
     }
     
     void getDownloadUrlAndSave(StorageReference imageRef) {
@@ -259,6 +284,178 @@ public class ProfileFragment extends Fragment {
                 });
     }
     
+    void testStorageConnectivity() {
+        Log.d(TAG, "🔍 Testing Firebase Storage connectivity...");
+        
+        try {
+            FirebaseStorage storage = FirebaseUtil.getFirebaseStorage();
+            StorageReference storageRef = storage.getReference();
+            
+            // Test if we can get a reference to the storage
+            Log.d(TAG, "📁 Storage reference: " + storageRef.toString());
+            Log.d(TAG, "🏢 Storage bucket: " + storageRef.getBucket());
+            
+            // Validate bucket URL format
+            String bucketName = storageRef.getBucket();
+            if (bucketName == null || bucketName.isEmpty()) {
+                Log.e(TAG, "❌ Storage bucket is null or empty!");
+                AndroidUtil.showToast(getContext(), "Storage bucket not configured");
+                return;
+            }
+            
+            if (!bucketName.contains("gkg-talkifyy")) {
+                Log.e(TAG, "❌ Storage bucket name mismatch! Expected: gkg-talkifyy, Got: " + bucketName);
+            }
+            
+            // Try to list files in the root to test connectivity
+            storageRef.listAll()
+                    .addOnSuccessListener(listResult -> {
+                        Log.d(TAG, "✅ Storage connectivity test successful");
+                        Log.d(TAG, "📂 Found " + listResult.getItems().size() + " items in storage");
+                        Log.d(TAG, "📁 Found " + listResult.getPrefixes().size() + " folders in storage");
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.w(TAG, "⚠️ Storage list test failed: " + e.getMessage());
+                        
+                        // Check specific error types
+                        if (e.getMessage() != null) {
+                            if (e.getMessage().contains("bucket does not exist")) {
+                                Log.e(TAG, "❌ Storage bucket doesn't exist. Need to initialize Firebase Storage.");
+                                AndroidUtil.showToast(getContext(), "Storage bucket doesn't exist. Contact support.");
+                            } else if (e.getMessage().contains("Permission denied")) {
+                                Log.w(TAG, "⚠️ Permission denied for listing (normal, rules are working)");
+                            }
+                        }
+                    });
+            
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Storage connectivity test failed", e);
+            AndroidUtil.showToast(getContext(), "Storage connectivity test failed: " + e.getMessage());
+        }
+    }
+    
+    void emergencyDirectUpload() {
+        Log.d(TAG, "🚨 EMERGENCY: Attempting direct upload with aggressive bucket initialization");
+        
+        try {
+            // Strategy 1: Try with explicit bucket URL first
+            uploadWithDirectBucketUrl();
+            
+        } catch (Exception e) {
+            Log.e(TAG, "🚨 Emergency direct upload failed", e);
+            // Fall back to original strategies
+            uploadWithFallbackStrategies();
+        }
+    }
+    
+    void uploadWithDirectBucketUrl() {
+        Log.d(TAG, "⚡ Trying upload with direct bucket URL initialization");
+        
+        try {
+            // Direct bucket initialization
+            String bucketUrl = "gs://gkg-talkifyy.firebasestorage.app";
+            Log.d(TAG, "🎯 Using explicit bucket: " + bucketUrl);
+            
+            FirebaseStorage storage = FirebaseStorage.getInstance(bucketUrl);
+            
+            // Test the storage immediately
+            StorageReference testRef = storage.getReference();
+            String actualBucket = testRef.getBucket();
+            Log.d(TAG, "✅ Direct bucket initialized: " + actualBucket);
+            
+            // Simple upload path
+            String fileName = "emergency_" + FirebaseUtil.currentUserId() + "_" + System.currentTimeMillis() + ".jpg";
+            StorageReference imageRef = storage.getReference().child(fileName);
+            
+            Log.d(TAG, "📤 Emergency upload to: " + imageRef.getPath());
+            Log.d(TAG, "🏢 Emergency bucket: " + imageRef.getBucket());
+            
+            imageRef.putFile(selectedImageUri)
+                    .addOnSuccessListener(taskSnapshot -> {
+                        Log.d(TAG, "🎉 EMERGENCY UPLOAD SUCCESS!");
+                        getDownloadUrlAndSave(imageRef);
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "💥 Emergency upload failed: " + e.getMessage());
+                        Log.e(TAG, "💥 Emergency error class: " + e.getClass().getSimpleName());
+                        
+                        // Capture full stack trace
+                        e.printStackTrace();
+                        
+                        // Try with test mode rules
+                        uploadWithTestModeRules();
+                    })
+                    .addOnProgressListener(taskSnapshot -> {
+                        double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+                        Log.d(TAG, "⚡ Emergency progress: " + (int) progress + "%");
+                    });
+                    
+        } catch (Exception e) {
+            Log.e(TAG, "💥 Direct bucket URL failed", e);
+            e.printStackTrace();
+            uploadWithTestModeRules();
+        }
+    }
+    
+    void uploadWithTestModeRules() {
+        Log.d(TAG, "🧪 Trying upload assuming test mode rules...");
+        
+        try {
+            // Most basic possible upload - no subdirectories
+            FirebaseStorage storage = FirebaseStorage.getInstance();
+            String fileName = System.currentTimeMillis() + ".jpg";
+            StorageReference imageRef = storage.getReference().child(fileName);
+            
+            Log.d(TAG, "🧪 Test upload to root: " + imageRef.getPath());
+            
+            imageRef.putFile(selectedImageUri)
+                    .addOnSuccessListener(taskSnapshot -> {
+                        Log.d(TAG, "🎉 TEST MODE UPLOAD SUCCESS!");
+                        getDownloadUrlAndSave(imageRef);
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "💥 Test mode upload failed: " + e.getMessage());
+                        Log.e(TAG, "💥 Test error class: " + e.getClass().getSimpleName());
+                        
+                        // Final attempt - show exact error to user
+                        AndroidUtil.showToast(getContext(), "Upload failed: " + e.getMessage());
+                        
+                        // Log everything we can
+                        logCompleteEnvironmentInfo(e);
+                        
+                        // Firebase Storage completely failed - try Firestore base64 upload
+                        Log.d(TAG, "🔄 All Firebase Storage methods failed - trying Firestore base64 upload");
+                        uploadImageToFirestore();
+                    });
+                    
+        } catch (Exception e) {
+            Log.e(TAG, "💥 Test mode setup failed", e);
+            logCompleteEnvironmentInfo(e);
+            uploadWithFallbackStrategies();
+        }
+    }
+    
+    void logCompleteEnvironmentInfo(Exception uploadError) {
+        Log.e(TAG, "📊 COMPLETE ENVIRONMENT DEBUG INFO:");
+        Log.e(TAG, "📱 App package: " + getContext().getPackageName());
+        Log.e(TAG, "🔐 User authenticated: " + FirebaseUtil.isLoggedIn());
+        Log.e(TAG, "👤 User ID: " + FirebaseUtil.currentUserId());
+        Log.e(TAG, "🖼️ Image URI: " + selectedImageUri.toString());
+        
+        try {
+            FirebaseStorage storage = FirebaseStorage.getInstance();
+            StorageReference ref = storage.getReference();
+            Log.e(TAG, "📦 Storage bucket: " + ref.getBucket());
+            Log.e(TAG, "📁 Storage reference: " + ref.toString());
+        } catch (Exception e) {
+            Log.e(TAG, "💥 Cannot get storage info: " + e.getMessage());
+        }
+        
+        Log.e(TAG, "💥 Final upload error: " + uploadError.getMessage());
+        Log.e(TAG, "💥 Error type: " + uploadError.getClass().getSimpleName());
+        uploadError.printStackTrace();
+    }
+    
     void handleCompleteUploadFailure(Exception e) {
         setInProgress(false);
         Log.e(TAG, "Complete upload failure", e);
@@ -284,6 +481,64 @@ public class ProfileFragment extends Fragment {
         Log.e(TAG, "Error class: " + e.getClass().getSimpleName());
         Log.e(TAG, "User ID: " + FirebaseUtil.currentUserId());
         Log.e(TAG, "Selected URI: " + selectedImageUri.toString());
+    }
+    
+    void uploadImageToFirestore() {
+        Log.d(TAG, "📋 EMERGENCY FALLBACK: Uploading image as base64 to Firestore");
+        
+        try {
+            // Convert image to bitmap and then to base64
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), selectedImageUri);
+            
+            // Resize bitmap to reduce size (max 300x300)
+            int maxSize = 300;
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            
+            if (width > maxSize || height > maxSize) {
+                float ratio = Math.min((float) maxSize / width, (float) maxSize / height);
+                width = Math.round(ratio * width);
+                height = Math.round(ratio * height);
+                bitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
+            }
+            
+            // Convert to base64
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 70, baos);
+            byte[] imageBytes = baos.toByteArray();
+            String base64String = Base64.encodeToString(imageBytes, Base64.DEFAULT);
+            
+            Log.d(TAG, "📋 Base64 image size: " + base64String.length() + " characters");
+            
+            // Create data URL for the image
+            String dataUrl = "data:image/jpeg;base64," + base64String;
+            
+            // Save to Firestore
+            FirebaseUtil.currentUserDetails().update("profilePicUrl", dataUrl)
+                    .addOnSuccessListener(aVoid -> {
+                        setInProgress(false);
+                        Log.d(TAG, "✅ FIRESTORE FALLBACK SUCCESS!");
+                        AndroidUtil.showToast(getContext(), "Profile picture updated successfully!");
+                        
+                        // Update the current user model
+                        if (currentUserModel != null) {
+                            currentUserModel.setProfilePicUrl(dataUrl);
+                        }
+                        
+                        // Refresh the UI
+                        loadProfilePicture();
+                    })
+                    .addOnFailureListener(e -> {
+                        setInProgress(false);
+                        Log.e(TAG, "💥 Firestore fallback failed: " + e.getMessage());
+                        AndroidUtil.showToast(getContext(), "Complete upload failure: " + e.getMessage());
+                    });
+                    
+        } catch (Exception e) {
+            setInProgress(false);
+            Log.e(TAG, "💥 Failed to process image for Firestore upload", e);
+            AndroidUtil.showToast(getContext(), "Failed to process image: " + e.getMessage());
+        }
     }
     
     void loadProfilePicture() {

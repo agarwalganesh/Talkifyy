@@ -25,6 +25,7 @@ import com.example.talkifyy.ChatActivity;
 import com.example.talkifyy.R;
 import com.example.talkifyy.model.ChatroomModel;
 import com.example.talkifyy.model.UserModel;
+import com.example.talkifyy.services.ChatRestorationService;
 import com.example.talkifyy.utils.AndroidUtil;
 import com.example.talkifyy.utils.FirebaseUtil;
 import com.example.talkifyy.utils.LocalDeletionUtil;
@@ -38,6 +39,7 @@ public class RecentChatRecyclerAdapter extends FirestoreRecyclerAdapter<Chatroom
         private static final String TAG = "RecentChatAdapter";
         Context context;
         ChatContextMenuListener contextMenuListener;
+        ChatRestorationService restorationService;
 
         public RecentChatRecyclerAdapter(@NonNull FirestoreRecyclerOptions<ChatroomModel> options, Context context) {
             super(options);
@@ -48,9 +50,14 @@ public class RecentChatRecyclerAdapter extends FirestoreRecyclerAdapter<Chatroom
             this.contextMenuListener = listener;
         }
         
+        public void setChatRestorationService(ChatRestorationService service) {
+            this.restorationService = service;
+        }
+        
         // Cleanup method to prevent memory leaks
         public void cleanup() {
             this.contextMenuListener = null;
+            this.restorationService = null;
         }
 
         @Override
@@ -260,6 +267,11 @@ public class RecentChatRecyclerAdapter extends FirestoreRecyclerAdapter<Chatroom
             // Mark chat as locally deleted
             LocalDeletionUtil.markChatAsLocallyDeleted(context, chatroomId);
             
+            // Add to restoration service monitoring
+            if (restorationService != null) {
+                restorationService.addChatToMonitoring(chatroomId);
+            }
+            
             // Show confirmation
             Toast.makeText(context, "Chat with " + displayName + " deleted for you", Toast.LENGTH_SHORT).show();
             
@@ -330,6 +342,7 @@ public class RecentChatRecyclerAdapter extends FirestoreRecyclerAdapter<Chatroom
             
             if (deletionTimestamp == 0) {
                 // No deletion timestamp found, restore the chat
+                Log.d(TAG, "No deletion timestamp found, restoring chat: " + chatroomId);
                 return true;
             }
             
@@ -338,10 +351,20 @@ public class RecentChatRecyclerAdapter extends FirestoreRecyclerAdapter<Chatroom
                 long lastMessageTime = model.getLastMessageTimestamp().toDate().getTime();
                 boolean hasNewMessage = lastMessageTime > deletionTimestamp;
                 
-                Log.d(TAG, "Chat restoration check - Deletion time: " + deletionTimestamp + 
-                    ", Last message time: " + lastMessageTime + ", Should restore: " + hasNewMessage);
+                // Also check if the last message is not from the current user
+                // (to handle cases where user sends a message after deleting)
+                String currentUserId = FirebaseUtil.currentUserId();
+                boolean lastMessageFromOtherUser = !model.getLastMessageSenderId().equals(currentUserId);
                 
-                return hasNewMessage;
+                // Restore if there's a new message, especially from the other user
+                boolean shouldRestore = hasNewMessage && (lastMessageFromOtherUser || hasNewMessage);
+                
+                Log.d(TAG, "Chat restoration check - Deletion time: " + deletionTimestamp + 
+                    ", Last message time: " + lastMessageTime + 
+                    ", From other user: " + lastMessageFromOtherUser +
+                    ", Should restore: " + shouldRestore);
+                
+                return shouldRestore;
             }
             
             return false;
