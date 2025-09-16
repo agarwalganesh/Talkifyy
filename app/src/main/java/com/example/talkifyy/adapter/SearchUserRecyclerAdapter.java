@@ -23,10 +23,15 @@ import com.firebase.ui.firestore.FirestoreRecyclerOptions;
 public class SearchUserRecyclerAdapter extends FirestoreRecyclerAdapter<UserModel, SearchUserRecyclerAdapter.UserModelViewHolder> {
 
     private final Context context;
+    private OnUserSelectListener userSelectListener;
 
     public SearchUserRecyclerAdapter(@NonNull FirestoreRecyclerOptions<UserModel> options, Context context) {
         super(options);
         this.context = context;
+    }
+    
+    public void setOnUserSelectListener(OnUserSelectListener listener) {
+        this.userSelectListener = listener;
     }
 
     @Override
@@ -48,12 +53,24 @@ public class SearchUserRecyclerAdapter extends FirestoreRecyclerAdapter<UserMode
 
 
         holder.itemView.setOnClickListener(v -> {
-            // Navigate to chat activity
+            onUserClick(model);
+        });
+    }
+    
+    /**
+     * Handle user click - can be overridden for custom behavior
+     * @param user The clicked user
+     */
+    protected void onUserClick(UserModel user) {
+        if (userSelectListener != null) {
+            userSelectListener.onUserSelected(user);
+        } else {
+            // Default behavior: Navigate to chat activity
             Intent intent = new Intent(context, ChatActivity.class);
-            AndroidUtil.passUserModelAsIntent(intent, model);
+            AndroidUtil.passUserModelAsIntent(intent, user);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
-        });
+        }
     }
 
     @NonNull
@@ -74,5 +91,10 @@ public class SearchUserRecyclerAdapter extends FirestoreRecyclerAdapter<UserMode
             phoneText = itemView.findViewById(R.id.phone_text);
             profilePic = itemView.findViewById(R.id.profile_pic_image_view);
         }
+    }
+    
+    public interface OnUserSelectListener {
+        void onUserSelected(UserModel user);
+        void onUserDeselected(UserModel user);
     }
 }

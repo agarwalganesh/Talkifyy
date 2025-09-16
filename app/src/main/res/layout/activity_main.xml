@@ -25,16 +25,32 @@
             android:layout_marginStart="10dp"
             android:layout_centerVertical="true"/>
 
-        <ImageButton
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/icon_search"
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            app:tint="@color/white"
             android:layout_centerVertical="true"
             android:layout_marginEnd="10dp"
-            android:id="@+id/main_search_btn"/>
+            android:orientation="horizontal">
+            
+            <ImageButton
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/person_icon"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="@color/white"
+                android:layout_marginEnd="8dp"
+                android:id="@+id/main_create_group_btn"/>
+            
+            <ImageButton
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/icon_search"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                app:tint="@color/white"
+                android:id="@+id/main_search_btn"/>
+                
+        </LinearLayout>
 
     </RelativeLayout>
 

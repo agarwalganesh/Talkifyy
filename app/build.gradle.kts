@@ -15,15 +15,27 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Fix for INSTALL_FAILED_TEST_ONLY - Allow installation from unknown sources
+        setProperty("archivesBaseName", "Talkifyy-v$versionName")
     }
 
     buildTypes {
+        debug {
+            isDebuggable = true
+            versionNameSuffix = "-debug"
+            // Fix test-only APK issue for debug builds
+            // Removed applicationIdSuffix to fix Firebase configuration
+        }
         release {
             isMinifyEnabled = false
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Ensure release APK is properly signed and installable
+            isShrinkResources = false
         }
     }
     compileOptions {

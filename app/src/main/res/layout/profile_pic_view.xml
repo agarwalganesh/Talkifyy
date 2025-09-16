@@ -10,10 +10,9 @@
         android:background="@drawable/circular_bg"
         android:src="@drawable/person_icon"
         android:padding="4dp"
-        app:tint="@color/light_gray"
         android:backgroundTint="@color/off_white"
         android:layout_centerInParent="true"
-
+        android:scaleType="centerCrop"
         android:id="@+id/profile_pic_image_view"
         />
 

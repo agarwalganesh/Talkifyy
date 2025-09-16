@@ -5,22 +5,34 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:background="@drawable/edit_text_rounded_corner"
     android:foreground="@drawable/chat_item_ripple"
-    android:layout_margin="10dp"
-    android:elevation="2dp"
+    android:layout_marginStart="12dp"
+    android:layout_marginEnd="12dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="6dp"
+    android:elevation="3dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
     android:clickable="true"
     android:focusable="true">
 
     <include layout="@layout/profile_pic_view"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:layout_gravity="center"
-        android:layout_margin="10dp"/>
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"/>
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
+        android:layout_weight="1"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_gravity="center">
+        android:layout_gravity="center_vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:paddingEnd="12dp">
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -31,19 +43,50 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:id="@+id/user_name_text"/>
-            <TextView
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                tools:text="10:00"
                 android:layout_alignParentEnd="true"
-                android:layout_marginEnd="10dp"
-                android:id="@+id/last_message_time_text"/>
+                android:orientation="vertical"
+                android:gravity="center">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="10:00"
+                    android:textSize="12sp"
+                    android:textColor="@color/gray"
+                    android:id="@+id/last_message_time_text"/>
+                
+                <!-- Unread message badge -->
+                <TextView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/circular_bg"
+                    android:backgroundTint="@color/red"
+                    android:gravity="center"
+                    android:text="1"
+                    android:textColor="@color/white"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    android:id="@+id/unread_count_badge"
+                    tools:visibility="visible"
+                    tools:text="3"/>
+                    
+            </LinearLayout>
         </RelativeLayout>
 
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                tools:text="+000000000000"
+                android:layout_marginTop="4dp"
+                android:textSize="14sp"
+                android:textColor="@color/gray"
+                tools:text="You: Hello there"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:id="@+id/last_message_text"/>
     </LinearLayout>
 

@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:name=".TalkifyyApplication"
@@ -20,7 +21,12 @@
         <activity
             android:name=".ChatActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTop"
+            android:alwaysRetainTaskState="true" />
+        <activity
+            android:name=".UserProfileActivity"
+            android:exported="false" />
         <activity
             android:name=".SearchUserActivity"
             android:exported="false" />
@@ -43,8 +49,29 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".OnboardingActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Talkifyy.NoActionBar" />
+        <activity
             android:name=".MainActivity"
             android:exported="false" />
+        <activity
+            android:name=".GroupCreateActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".GroupInfoActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ImageViewerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Talkifyy.NoActionBar"
+            android:parentActivityName=".ChatActivity" />
+        <activity
+            android:name=".SwipeableImageViewerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Talkifyy.NoActionBar"
+            android:parentActivityName=".ChatActivity" />
         
         <service android:name=".FCMNotificationService"
             android:exported="false">
@@ -52,6 +79,18 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+        
+        <!-- FileProvider for camera images -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
+        
     </application>
 
 </manifest>

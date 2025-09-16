@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/off_white"
+    tools:context=".GroupCreateActivity">
+
+    <!-- Toolbar -->
+    <RelativeLayout
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="@color/my_primary"
+        android:padding="8dp"
+        android:elevation="4dp">
+
+        <ImageButton
+            android:id="@+id/back_btn"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/icon_back"
+            android:backgroundTint="@color/white" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="16dp"
+            android:layout_toEndOf="@id/back_btn"
+            android:text="Create Group"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+    </RelativeLayout>
+
+    <!-- Group Info Section -->
+    <LinearLayout
+        android:id="@+id/group_info_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolbar"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@color/white"
+        android:layout_margin="8dp"
+        android:elevation="2dp">
+
+        <!-- Group Profile Picture -->
+        <FrameLayout
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp">
+
+            <ImageView
+                android:id="@+id/group_profile_pic"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/edit_text_rounded_corner"
+                android:backgroundTint="@color/light_gray"
+                android:src="@drawable/person_icon"
+                android:scaleType="centerCrop"
+                android:padding="16dp" />
+
+            <ImageView
+                android:id="@+id/camera_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="bottom|end"
+                android:background="@drawable/circular_bg"
+                android:backgroundTint="@color/my_primary"
+                android:src="@drawable/icon_search"
+                android:padding="4dp"
+                android:layout_margin="4dp" />
+
+        </FrameLayout>
+
+        <!-- Group Name Input -->
+        <EditText
+            android:id="@+id/group_name_input"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/edit_text_rounded_corner"
+            android:backgroundTint="@color/off_white"
+            android:padding="12dp"
+            android:hint="Group name"
+            android:textSize="16sp"
+            android:layout_marginBottom="12dp"
+            android:maxLength="50"
+            android:imeOptions="actionNext" />
+
+        <!-- Group Description Input -->
+        <EditText
+            android:id="@+id/group_description_input"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:background="@drawable/edit_text_rounded_corner"
+            android:backgroundTint="@color/off_white"
+            android:padding="12dp"
+            android:hint="Group description (optional)"
+            android:textSize="14sp"
+            android:gravity="top|start"
+            android:maxLength="200"
+            android:inputType="textMultiLine"
+            android:imeOptions="actionDone" />
+
+    </LinearLayout>
+
+    <!-- Search Users Section -->
+    <LinearLayout
+        android:id="@+id/search_section"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/group_info_section"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="@color/white"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:elevation="2dp">
+
+        <EditText
+            android:id="@+id/search_users_input"
+            android:layout_width="0dp"
+            android:layout_height="45dp"
+            android:layout_weight="1"
+            android:background="@drawable/edit_text_rounded_corner"
+            android:backgroundTint="@color/off_white"
+            android:padding="12dp"
+            android:hint="Search users to add..."
+            android:textSize="14sp"
+            android:imeOptions="actionSearch"
+            android:inputType="text" />
+
+        <ImageButton
+            android:id="@+id/search_btn"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/edit_text_rounded_corner"
+            android:backgroundTint="@color/my_primary"
+            android:src="@drawable/icon_search"
+            android:padding="12dp"
+            app:tint="@color/white" />
+
+    </LinearLayout>
+
+    <!-- Selected Users Section -->
+    <TextView
+        android:id="@+id/selected_users_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/search_section"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="Selected Users (0)"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary" />
+
+    <!-- Selected Users RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/selected_users_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_below="@id/selected_users_title"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal"
+        tools:listitem="@layout/selected_user_item" />
+
+    <!-- Search Results RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/search_results_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/selected_users_recycler_view"
+        android:layout_above="@id/create_group_btn"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
+        tools:listitem="@layout/search_user_recycler_row" />
+
+    <!-- Create Group Button -->
+    <Button
+        android:id="@+id/create_group_btn"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_alignParentBottom="true"
+        android:layout_margin="16dp"
+        android:background="@drawable/edit_text_rounded_corner"
+        android:backgroundTint="@color/my_primary"
+        android:text="Create Group"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:enabled="false" />
+
+</RelativeLayout>

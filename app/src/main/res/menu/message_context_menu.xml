@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
+        android:id="@+id/menu_edit_message"
+        android:title="Edit"
+        android:icon="@drawable/icon_search" />
+    <item
         android:id="@+id/menu_delete_locally"
         android:title="Delete for Me"
         android:icon="@drawable/icon_delete" />
@@ -12,4 +16,22 @@
         android:id="@+id/menu_multi_select"
         android:title="Select Messages"
         android:icon="@drawable/icon_back" />
+    
+    <!-- Image-specific menu items -->
+    <item
+        android:id="@+id/menu_image_info"
+        android:title="Info"
+        android:icon="@drawable/icon_search" />
+    <item
+        android:id="@+id/menu_image_forward"
+        android:title="Forward"
+        android:icon="@drawable/icon_back" />
+    <item
+        android:id="@+id/menu_image_save"
+        android:title="Save"
+        android:icon="@drawable/icon_delete" />
+    <item
+        android:id="@+id/menu_image_reply"
+        android:title="Reply"
+        android:icon="@drawable/icon_search" />
 </menu>

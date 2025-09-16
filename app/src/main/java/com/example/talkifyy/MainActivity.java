@@ -26,12 +26,22 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Check if onboarding should be shown for new users
+        if (OnboardingActivity.shouldShowOnboarding(this)) {
+            Intent onboardingIntent = new Intent(this, OnboardingActivity.class);
+            startActivity(onboardingIntent);
+            finish();
+            return;
+        }
+        
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
 
         BottomNavigationView bottomNavigationView;
         ImageButton searchButton;
+        ImageButton createGroupButton;
 
         ChatFragment chatFragment;
         ProfileFragment profileFragment;
@@ -48,10 +58,14 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         searchButton = findViewById(R.id.main_search_btn);
-
+        createGroupButton = findViewById(R.id.main_create_group_btn);
 
         searchButton.setOnClickListener((v)->{
             startActivity(new Intent(MainActivity.this,SearchUserActivity.class));
+        });
+        
+        createGroupButton.setOnClickListener((v)->{
+            startActivity(new Intent(MainActivity.this, GroupCreateActivity.class));
         });
 
 

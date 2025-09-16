@@ -15,11 +15,24 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.FirebaseApp;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 
 public class FirebaseUtil {
     public static String currentUserId(){
-        return FirebaseAuth.getInstance().getUid();
+        try {
+            String uid = FirebaseAuth.getInstance().getUid();
+            if (uid == null) {
+                Log.w("FirebaseUtil", "⚠️ currentUserId is null - user might not be logged in");
+            }
+            return uid;
+        } catch (Exception e) {
+            Log.e("FirebaseUtil", "❌ Error getting current user ID", e);
+            return null;
+        }
     }
 
     public static boolean isLoggedIn(){
@@ -48,6 +61,19 @@ public class FirebaseUtil {
 
 
     public static String getChatroomId(String userId1,String userId2){
+        // Add null safety checks
+        if (userId1 == null || userId2 == null) {
+            Log.e("FirebaseUtil", "❌ getChatroomId called with null userId: userId1=" + userId1 + ", userId2=" + userId2);
+            // Return a fallback ID to prevent crashes
+            return "unknown_" + System.currentTimeMillis();
+        }
+        
+        if (userId1.isEmpty() || userId2.isEmpty()) {
+            Log.w("FirebaseUtil", "⚠️ getChatroomId called with empty userId: userId1=" + userId1 + ", userId2=" + userId2);
+            // Still generate an ID to prevent crashes
+            return (userId1.isEmpty() ? "empty1" : userId1) + "_" + (userId2.isEmpty() ? "empty2" : userId2) + "_" + System.currentTimeMillis();
+        }
+        
         if(userId1.hashCode()<userId2.hashCode()){
             return userId1+"_"+userId2;
         }else{
@@ -475,38 +501,6 @@ public class FirebaseUtil {
         }
     }
     
-    /**
-     * Check if current user is admin in a group chat
-     * @param chatroomId Chatroom ID
-     * @param userId User ID to check
-     * @param onSuccess Success callback with boolean result
-     * @param onFailure Failure callback
-     */
-    public static void isUserGroupAdmin(String chatroomId, String userId,
-                                       OnSuccessListener<Boolean> onSuccess, OnFailureListener onFailure) {
-        // For now, return false as this is primarily a 1-on-1 chat system
-        // In a full group chat implementation, this would check the chatroom's admin list
-        DocumentReference chatroomRef = getChatroomReference(chatroomId);
-        
-        chatroomRef.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful() && task.getResult().exists()) {
-                DocumentSnapshot doc = task.getResult();
-                
-                // Check if this chatroom has admin information
-                @SuppressWarnings("unchecked")
-                List<String> admins = (List<String>) doc.get("admins");
-                
-                if (admins != null) {
-                    onSuccess.onSuccess(admins.contains(userId));
-                } else {
-                    // No admin list, assume false for 1-on-1 chats
-                    onSuccess.onSuccess(false);
-                }
-            } else {
-                onFailure.onFailure(new Exception("Failed to check admin status"));
-            }
-        });
-    }
     
     /**
      * Update chatroom last message info, handling deleted messages appropriately
@@ -552,6 +546,423 @@ public class FirebaseUtil {
     // Interface for batch operation completion
     public interface OnBatchCompleteListener {
         void onComplete(int successCount, int failureCount);
+    }
+    
+    // Message Reaction Methods
+    
+    /**
+     * Add or remove a reaction from a message
+     * @param chatroomId Chatroom ID
+     * @param messageId Message ID
+     * @param emoji Emoji reaction
+     * @param userId User ID
+     * @param onSuccess Success callback with boolean (true if added, false if removed)
+     * @param onFailure Failure callback
+     */
+    public static void toggleMessageReaction(String chatroomId, String messageId, String emoji, String userId,
+                                           OnSuccessListener<Boolean> onSuccess, OnFailureListener onFailure) {
+        DocumentReference messageRef = getChatroomMessageReference(chatroomId).document(messageId);
+        
+        messageRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                // Get current reactions
+                @SuppressWarnings("unchecked")
+                Map<String, Object> reactions = (Map<String, Object>) documentSnapshot.get("reactions");
+                if (reactions == null) {
+                    reactions = new HashMap<>();
+                }
+                
+                // Get users for this emoji
+                @SuppressWarnings("unchecked")
+                List<String> userList = (List<String>) reactions.get(emoji);
+                if (userList == null) {
+                    userList = new ArrayList<>();
+                }
+                
+                boolean wasAdded;
+                if (userList.contains(userId)) {
+                    // Remove reaction
+                    userList.remove(userId);
+                    if (userList.isEmpty()) {
+                        reactions.remove(emoji);
+                    } else {
+                        reactions.put(emoji, userList);
+                    }
+                    wasAdded = false;
+                } else {
+                    // Add reaction
+                    userList.add(userId);
+                    reactions.put(emoji, userList);
+                    wasAdded = true;
+                }
+                
+                // Calculate total reactions
+                int totalReactions = 0;
+                for (Object value : reactions.values()) {
+                    if (value instanceof List) {
+                        totalReactions += ((List<?>) value).size();
+                    }
+                }
+                
+                // Update in Firestore
+                messageRef.update(
+                    "reactions", reactions,
+                    "totalReactions", totalReactions
+                ).addOnSuccessListener(aVoid -> {
+                    Log.d("FirebaseUtil", "Reaction " + (wasAdded ? "added" : "removed") + ": " + emoji);
+                    onSuccess.onSuccess(wasAdded);
+                }).addOnFailureListener(onFailure);
+                
+            } else {
+                onFailure.onFailure(new Exception("Message not found"));
+            }
+        }).addOnFailureListener(onFailure);
+    }
+    
+    /**
+     * Get reactions for a specific message
+     * @param chatroomId Chatroom ID
+     * @param messageId Message ID
+     * @param onSuccess Success callback with reactions map
+     * @param onFailure Failure callback
+     */
+    public static void getMessageReactions(String chatroomId, String messageId,
+                                         OnSuccessListener<Map<String, List<String>>> onSuccess,
+                                         OnFailureListener onFailure) {
+        DocumentReference messageRef = getChatroomMessageReference(chatroomId).document(messageId);
+        
+        messageRef.get().addOnSuccessListener(documentSnapshot -> {
+            if (documentSnapshot.exists()) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> reactionsData = (Map<String, Object>) documentSnapshot.get("reactions");
+                
+                Map<String, List<String>> reactions = new HashMap<>();
+                if (reactionsData != null) {
+                    for (Map.Entry<String, Object> entry : reactionsData.entrySet()) {
+                        @SuppressWarnings("unchecked")
+                        List<String> userList = (List<String>) entry.getValue();
+                        if (userList != null && !userList.isEmpty()) {
+                            reactions.put(entry.getKey(), userList);
+                        }
+                    }
+                }
+                
+                onSuccess.onSuccess(reactions);
+            } else {
+                onFailure.onFailure(new Exception("Message not found"));
+            }
+        }).addOnFailureListener(onFailure);
+    }
+    
+    /**
+     * Check if a user has reacted with a specific emoji to a message
+     * @param chatroomId Chatroom ID
+     * @param messageId Message ID
+     * @param emoji Emoji reaction
+     * @param userId User ID
+     * @param onSuccess Success callback with boolean result
+     * @param onFailure Failure callback
+     */
+    public static void hasUserReactedToMessage(String chatroomId, String messageId, String emoji, String userId,
+                                             OnSuccessListener<Boolean> onSuccess, OnFailureListener onFailure) {
+        getMessageReactions(chatroomId, messageId, 
+            reactions -> {
+                List<String> userList = reactions.get(emoji);
+                boolean hasReacted = userList != null && userList.contains(userId);
+                onSuccess.onSuccess(hasReacted);
+            },
+            onFailure
+        );
+    }
+    
+    /**
+     * Get reaction count for a specific emoji on a message
+     * @param chatroomId Chatroom ID
+     * @param messageId Message ID
+     * @param emoji Emoji reaction
+     * @param onSuccess Success callback with count
+     * @param onFailure Failure callback
+     */
+    public static void getReactionCount(String chatroomId, String messageId, String emoji,
+                                      OnSuccessListener<Integer> onSuccess, OnFailureListener onFailure) {
+        getMessageReactions(chatroomId, messageId,
+            reactions -> {
+                List<String> userList = reactions.get(emoji);
+                int count = userList != null ? userList.size() : 0;
+                onSuccess.onSuccess(count);
+            },
+            onFailure
+        );
+    }
+    
+    /**
+     * Clear all reactions from a message (admin function)
+     * @param chatroomId Chatroom ID
+     * @param messageId Message ID
+     * @param onSuccess Success callback
+     * @param onFailure Failure callback
+     */
+    public static void clearMessageReactions(String chatroomId, String messageId,
+                                           OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        DocumentReference messageRef = getChatroomMessageReference(chatroomId).document(messageId);
+        
+        messageRef.update(
+            "reactions", new HashMap<>(),
+            "totalReactions", 0
+        ).addOnSuccessListener(aVoid -> {
+            Log.d("FirebaseUtil", "Cleared all reactions for message: " + messageId);
+            onSuccess.onSuccess(aVoid);
+        }).addOnFailureListener(onFailure);
+    }
+    
+    // Group Chat Methods
+    
+    /**
+     * Generate a unique chatroom ID for group chats
+     * @return Unique group chatroom ID
+     */
+    public static String generateGroupChatroomId() {
+        return FirebaseFirestore.getInstance().collection("chatrooms").document().getId();
+    }
+    
+    /**
+     * Create a new group chat
+     * @param groupName Name of the group
+     * @param groupDescription Description of the group
+     * @param userIds List of user IDs to add to the group
+     * @param createdBy User ID of the group creator
+     * @param onSuccess Success callback with group ID
+     * @param onFailure Failure callback
+     */
+    public static void createGroupChat(String groupName, String groupDescription, List<String> userIds,
+                                     String createdBy, OnSuccessListener<String> onSuccess, OnFailureListener onFailure) {
+        String groupId = generateGroupChatroomId();
+        
+        // Ensure creator is in the user list and is an admin
+        List<String> allUserIds = new ArrayList<>(userIds);
+        if (!allUserIds.contains(createdBy)) {
+            allUserIds.add(createdBy);
+        }
+        
+        com.example.talkifyy.model.ChatroomModel groupChatroom = new com.example.talkifyy.model.ChatroomModel(
+            groupId,
+            allUserIds,
+            Timestamp.now(),
+            "",
+            groupName,
+            groupDescription,
+            Arrays.asList(createdBy), // Creator as admin
+            createdBy
+        );
+        
+        getChatroomReference(groupId).set(groupChatroom)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirebaseUtil", "Group chat created successfully: " + groupName);
+                    onSuccess.onSuccess(groupId);
+                })
+                .addOnFailureListener(error -> {
+                    Log.e("FirebaseUtil", "Failed to create group chat: " + groupName, error);
+                    onFailure.onFailure(error);
+                });
+    }
+    
+    /**
+     * Update group name
+     * @param chatroomId Group chatroom ID
+     * @param newGroupName New group name
+     * @param onSuccess Success callback
+     * @param onFailure Failure callback
+     */
+    public static void updateGroupName(String chatroomId, String newGroupName, 
+                                     OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        getChatroomReference(chatroomId)
+                .update("groupName", newGroupName)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirebaseUtil", "Group name updated successfully: " + newGroupName);
+                    onSuccess.onSuccess(aVoid);
+                })
+                .addOnFailureListener(error -> {
+                    Log.e("FirebaseUtil", "Failed to update group name", error);
+                    onFailure.onFailure(error);
+                });
+    }
+    
+    /**
+     * Update group description
+     * @param chatroomId Group chatroom ID
+     * @param newDescription New group description
+     * @param onSuccess Success callback
+     * @param onFailure Failure callback
+     */
+    public static void updateGroupDescription(String chatroomId, String newDescription,
+                                            OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        getChatroomReference(chatroomId)
+                .update("groupDescription", newDescription)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirebaseUtil", "Group description updated successfully");
+                    onSuccess.onSuccess(aVoid);
+                })
+                .addOnFailureListener(error -> {
+                    Log.e("FirebaseUtil", "Failed to update group description", error);
+                    onFailure.onFailure(error);
+                });
+    }
+    
+    /**
+     * Add user to group
+     * @param chatroomId Group chatroom ID
+     * @param userId User ID to add
+     * @param onSuccess Success callback
+     * @param onFailure Failure callback
+     */
+    public static void addUserToGroup(String chatroomId, String userId,
+                                    OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        getChatroomReference(chatroomId)
+                .update("userIds", FieldValue.arrayUnion(userId))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirebaseUtil", "User added to group successfully: " + userId);
+                    onSuccess.onSuccess(aVoid);
+                })
+                .addOnFailureListener(error -> {
+                    Log.e("FirebaseUtil", "Failed to add user to group: " + userId, error);
+                    onFailure.onFailure(error);
+                });
+    }
+    
+    /**
+     * Add multiple users to group
+     * @param chatroomId Group chatroom ID
+     * @param userIds List of user IDs to add
+     * @param onSuccess Success callback
+     * @param onFailure Failure callback
+     */
+    public static void addUsersToGroup(String chatroomId, List<String> userIds,
+                                     OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        if (userIds == null || userIds.isEmpty()) {
+            onFailure.onFailure(new Exception("No users to add"));
+            return;
+        }
+        
+        getChatroomReference(chatroomId)
+                .update("userIds", FieldValue.arrayUnion(userIds.toArray()))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirebaseUtil", "Users added to group successfully: " + userIds.size() + " users");
+                    onSuccess.onSuccess(aVoid);
+                })
+                .addOnFailureListener(error -> {
+                    Log.e("FirebaseUtil", "Failed to add users to group", error);
+                    onFailure.onFailure(error);
+                });
+    }
+    
+    /**
+     * Remove user from group
+     * @param chatroomId Group chatroom ID
+     * @param userId User ID to remove
+     * @param onSuccess Success callback
+     * @param onFailure Failure callback
+     */
+    public static void removeUserFromGroup(String chatroomId, String userId,
+                                         OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        getChatroomReference(chatroomId)
+                .update("userIds", FieldValue.arrayRemove(userId))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirebaseUtil", "User removed from group successfully: " + userId);
+                    onSuccess.onSuccess(aVoid);
+                })
+                .addOnFailureListener(error -> {
+                    Log.e("FirebaseUtil", "Failed to remove user from group: " + userId, error);
+                    onFailure.onFailure(error);
+                });
+    }
+    
+    /**
+     * Add admin to group
+     * @param chatroomId Group chatroom ID
+     * @param userId User ID to make admin
+     * @param onSuccess Success callback
+     * @param onFailure Failure callback
+     */
+    public static void addGroupAdmin(String chatroomId, String userId,
+                                   OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        getChatroomReference(chatroomId)
+                .update("adminIds", FieldValue.arrayUnion(userId))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirebaseUtil", "Admin added to group successfully: " + userId);
+                    onSuccess.onSuccess(aVoid);
+                })
+                .addOnFailureListener(error -> {
+                    Log.e("FirebaseUtil", "Failed to add admin to group: " + userId, error);
+                    onFailure.onFailure(error);
+                });
+    }
+    
+    /**
+     * Remove admin from group
+     * @param chatroomId Group chatroom ID
+     * @param userId User ID to remove admin status from
+     * @param onSuccess Success callback
+     * @param onFailure Failure callback
+     */
+    public static void removeGroupAdmin(String chatroomId, String userId,
+                                      OnSuccessListener<Void> onSuccess, OnFailureListener onFailure) {
+        getChatroomReference(chatroomId)
+                .update("adminIds", FieldValue.arrayRemove(userId))
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("FirebaseUtil", "Admin removed from group successfully: " + userId);
+                    onSuccess.onSuccess(aVoid);
+                })
+                .addOnFailureListener(error -> {
+                    Log.e("FirebaseUtil", "Failed to remove admin from group: " + userId, error);
+                    onFailure.onFailure(error);
+                });
+    }
+    
+    /**
+     * Check if user is admin in a specific group
+     * @param chatroomId Group chatroom ID
+     * @param userId User ID to check
+     * @param onSuccess Success callback with boolean result
+     * @param onFailure Failure callback
+     */
+    public static void isUserGroupAdmin(String chatroomId, String userId,
+                                      OnSuccessListener<Boolean> onSuccess, OnFailureListener onFailure) {
+        getChatroomReference(chatroomId).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult().exists()) {
+                DocumentSnapshot doc = task.getResult();
+                
+                @SuppressWarnings("unchecked")
+                List<String> admins = (List<String>) doc.get("adminIds");
+                
+                boolean isAdmin = admins != null && admins.contains(userId);
+                onSuccess.onSuccess(isAdmin);
+            } else {
+                onFailure.onFailure(new Exception("Failed to check admin status"));
+            }
+        });
+    }
+    
+    /**
+     * Get group information
+     * @param chatroomId Group chatroom ID
+     * @param onSuccess Success callback with ChatroomModel
+     * @param onFailure Failure callback
+     */
+    public static void getGroupInfo(String chatroomId, 
+                                  OnSuccessListener<com.example.talkifyy.model.ChatroomModel> onSuccess, 
+                                  OnFailureListener onFailure) {
+        getChatroomReference(chatroomId).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult().exists()) {
+                com.example.talkifyy.model.ChatroomModel chatroom = task.getResult().toObject(com.example.talkifyy.model.ChatroomModel.class);
+                if (chatroom != null) {
+                    onSuccess.onSuccess(chatroom);
+                } else {
+                    onFailure.onFailure(new Exception("Failed to parse group information"));
+                }
+            } else {
+                onFailure.onFailure(new Exception("Group not found"));
+            }
+        });
     }
 
 }

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <!-- Full screen image -->
+    <ImageView
+        android:id="@+id/fullscreen_image_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:scaleType="fitCenter"
+        android:background="@color/black"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <!-- Loading indicator -->
+    <ProgressBar
+        android:id="@+id/loading_progress"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_centerInParent="true"
+        android:indeterminateTint="@color/white"
+        android:visibility="gone" />
+
+    <!-- Back button overlay -->
+    <ImageButton
+        android:id="@+id/back_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:layout_margin="16dp"
+        android:background="@drawable/circular_bg"
+        android:backgroundTint="#80000000"
+        android:src="@drawable/icon_back"
+        app:tint="@color/white"
+        android:padding="12dp"
+        android:elevation="8dp" />
+
+    <!-- Image info overlay -->
+    <TextView
+        android:id="@+id/image_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="#80000000"
+        android:padding="16dp"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:lineSpacingExtra="4dp"
+        android:visibility="gone" />
+
+</RelativeLayout>
